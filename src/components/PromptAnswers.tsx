@@ -10,7 +10,7 @@ import { MODEL_LABELS, type ProductDef, type PromptRun } from "@/lib/types";
  */
 
 /** Same alias semantics as the parser: word boundaries, per-alias case. */
-function highlightAliases(text: string, product: ProductDef): React.ReactNode {
+function findAliasRanges(text: string, product: ProductDef): { start: number; end: number }[] {
   const ranges: { start: number; end: number }[] = [];
   for (const alias of product.aliases) {
     const { text: aliasText, caseSensitive } =
@@ -20,6 +20,16 @@ function highlightAliases(text: string, product: ProductDef): React.ReactNode {
       ranges.push({ start: m.index, end: m.index + m[0].length });
     }
   }
+  return ranges;
+}
+
+/** True when TODAY'S alias table finds the product in this answer. */
+export function answerNamesProduct(text: string, product: ProductDef): boolean {
+  return findAliasRanges(text, product).length > 0;
+}
+
+function highlightAliases(text: string, product: ProductDef): React.ReactNode {
+  const ranges = findAliasRanges(text, product);
   if (ranges.length === 0) return text;
 
   ranges.sort((a, b) => a.start - b.start || b.end - a.end);
@@ -155,6 +165,9 @@ export function AnswersPanel({ runs, product }: { runs: PromptRun[]; product: Pr
     <div className="mt-3 space-y-3 rounded-2xl border-2 border-stone-200 bg-stone-50 p-3 sm:p-4 dark:border-stone-800 dark:bg-stone-900/50">
       {runs.map((run) => {
         const mention = run.mentions.find((m) => m.productId === product.id);
+        // Named by today's aliases but not counted at run time: the tool
+        // (or the alias) was added to the catalog after this run happened.
+        const missedByRun = !mention && answerNamesProduct(run.answer ?? "", product);
         return (
           <article
             key={`${run.model}-${run.runIndex}`}
@@ -169,6 +182,13 @@ export function AnswersPanel({ runs, product }: { runs: PromptRun[]; product: Pr
               {mention ? (
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-mono text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                   named #{mention.position}
+                </span>
+              ) : missedByRun ? (
+                <span
+                  className="rounded-full bg-amber-100 px-2 py-0.5 font-mono text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                  title="The answer names it, but this tool (or alias) joined the catalog after this run, so the run did not count it. The next run will."
+                >
+                  ⏳ named, not counted yet
                 </span>
               ) : (
                 <span className="rounded-full bg-stone-100 px-2 py-0.5 font-mono text-stone-500 dark:bg-stone-800 dark:text-stone-400">
