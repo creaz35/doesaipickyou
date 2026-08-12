@@ -18,11 +18,21 @@ interface Hit {
  *
  * When two products' aliases overlap in the text ("Notion AI" vs "Notion"),
  * the longer match wins and the shorter is discarded for that span.
+ *
+ * `excludeProductId` skips one product entirely: used for the category
+ * leader on "alternatives to {leader}" prompts, where the answer echoing
+ * the question's subject is not a recommendation. Positions are then
+ * assigned over the remaining products, so the first alternative is #1.
  */
-export function extractMentions(text: string, category: CategoryDef): Mention[] {
+export function extractMentions(
+  text: string,
+  category: CategoryDef,
+  excludeProductId?: string,
+): Mention[] {
   const hits: Hit[] = [];
 
   for (const product of category.products) {
+    if (product.id === excludeProductId) continue;
     for (const alias of product.aliases) {
       const { text: aliasText, caseSensitive } =
         typeof alias === "string" ? { text: alias, caseSensitive: false } : alias;

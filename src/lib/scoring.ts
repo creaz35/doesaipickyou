@@ -1,3 +1,4 @@
+import { LEADER_TEMPLATE_IDS } from "@/data/templates";
 import type { CategoryDef, ModelId, ProductScore, Snapshot } from "./types";
 
 /**
@@ -32,11 +33,19 @@ export function scoreCategory(
   );
 
   const scores = category.products.map((product) => {
+    // The leader is excluded from parsing on prompts that name it, so
+    // those runs leave its denominator too: otherwise its ceiling would
+    // be ~67 while everyone else can reach 100.
+    const eligible =
+      product.id === category.leader
+        ? runs.filter((r) => !LEADER_TEMPLATE_IDS.has(r.templateId))
+        : runs;
+
     let weightSum = 0;
     let mentionedRuns = 0;
     let positionSum = 0;
 
-    for (const run of runs) {
+    for (const run of eligible) {
       const mention = run.mentions.find((m) => m.productId === product.id);
       if (mention) {
         weightSum += positionWeight(mention.position);
@@ -50,10 +59,10 @@ export function scoreCategory(
       name: product.name,
       url: product.url,
       price: product.price,
-      visibility: runs.length ? Math.round((weightSum / runs.length) * 1000) / 10 : 0,
-      mentionRate: runs.length ? mentionedRuns / runs.length : 0,
+      visibility: eligible.length ? Math.round((weightSum / eligible.length) * 1000) / 10 : 0,
+      mentionRate: eligible.length ? mentionedRuns / eligible.length : 0,
       avgPosition: mentionedRuns ? Math.round((positionSum / mentionedRuns) * 10) / 10 : null,
-      runs: runs.length,
+      runs: eligible.length,
     };
   });
 

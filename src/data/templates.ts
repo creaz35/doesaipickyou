@@ -25,6 +25,16 @@ export const TEMPLATES: PromptTemplate[] = [
 ];
 
 /**
+ * Templates that name the category leader in the question. The leader is
+ * excluded from mention parsing AND from its own denominator on these
+ * runs: models echo the question's subject back ("if you want
+ * alternatives to Buffer, ..."), and an echo is not a recommendation.
+ */
+export const LEADER_TEMPLATE_IDS: ReadonlySet<string> = new Set(
+  TEMPLATES.filter((t) => t.text.includes("{leader}")).map((t) => t.id),
+);
+
+/**
  * "a CRM" but "an SEO research tool" and "an AI writing assistant".
  * Acronyms take the article of the letter name (es-ee-oh), not the letter.
  */

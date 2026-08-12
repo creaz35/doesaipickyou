@@ -8,7 +8,7 @@
 
 1. **Prompts**: six fixed templates ([src/data/templates.ts](src/data/templates.ts)) applied identically to every category, so scores are comparable across categories.
 2. **Runs**: each prompt runs 3× per model per monthly snapshot to smooth out nondeterminism.
-3. **Parsing**: answers are matched against a hand-curated alias table per category ([src/data/categories.ts](src/data/categories.ts)). Exact word-boundary matches only, no fuzzy matching. Common-word product names ("Later", "Linear", "Wave") match case-sensitively.
+3. **Parsing**: answers are matched against a hand-curated alias table per category ([src/data/categories.ts](src/data/categories.ts)). Exact word-boundary matches only, no fuzzy matching. Common-word product names ("Later", "Linear", "Wave") match case-sensitively. On prompts that name the category leader ("alternatives to X"), the leader itself is excluded from both counting and its own denominator: an answer echoing the question is not a recommendation.
 4. **Scoring**: a mention is weighted by its position in the answer (1st = 1.0 down to 0.4 for 6th and later), averaged over all runs, ×100. See [src/lib/scoring.ts](src/lib/scoring.ts).
 5. **Snapshots**: one dated JSON per month in `data/snapshots/`, committed to the repo, never overwritten. The history is the asset.
 

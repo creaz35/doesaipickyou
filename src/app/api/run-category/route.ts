@@ -1,4 +1,4 @@
-import { renderPrompt, TEMPLATES } from "@/data/templates";
+import { LEADER_TEMPLATE_IDS, renderPrompt, TEMPLATES } from "@/data/templates";
 import type { CategoryDoc, ToolDoc } from "@/lib/firebase/catalog";
 import { extractMentions } from "@/lib/parser";
 import { scoreCategory } from "@/lib/scoring";
@@ -112,7 +112,12 @@ export async function POST(request: Request) {
         prompt: job.prompt,
         model: job.model,
         runIndex: job.runIndex,
-        mentions: extractMentions(answer, categoryDef),
+        mentions: extractMentions(
+          answer,
+          categoryDef,
+          // The prompt names the leader; echoing it back is not a pick.
+          LEADER_TEMPLATE_IDS.has(job.template.id) ? categoryDef.leader : undefined,
+        ),
         answer:
           answer.length > MAX_ANSWER_CHARS ? `${answer.slice(0, MAX_ANSWER_CHARS)}…` : answer,
       };

@@ -371,31 +371,42 @@ export default async function ProductPage({ params }: PageProps<"/[product]">) {
                       &ldquo;{stat.prompt}&rdquo;
                     </span>
                     <div className="flex shrink-0 items-center gap-3">
-                      <div className="w-28">
-                        <Bar pct={stat.runs ? (stat.mentioned / stat.runs) * 100 : 0} />
-                      </div>
-                      <span className="w-12 text-right font-mono text-sm font-semibold">
-                        {stat.mentioned}/{stat.runs}
-                      </span>
-                      <span
-                        className={`w-16 text-right text-xs ${
-                          stat.avgPosition !== null ? "text-stone-500" : "text-rose-500"
-                        }`}
-                      >
-                        {stat.avgPosition !== null ? (
-                          `avg #${stat.avgPosition}`
-                        ) : (
-                          <>
-                            <span
-                              aria-hidden="true"
-                              className="inline-block animate-[ghost-float_2s_ease-in-out_infinite] motion-reduce:animate-none"
-                            >
-                              👻
-                            </span>{" "}
-                            never
-                          </>
-                        )}
-                      </span>
+                      {stat.excluded ? (
+                        <span
+                          className="rounded-full bg-stone-100 px-2.5 py-1 font-mono text-xs text-stone-500 dark:bg-stone-800 dark:text-stone-400"
+                          title={`This prompt asks what to use instead of ${product.name}, so ${product.name} is not scored on it. The answers below show who the models suggest as replacements.`}
+                        >
+                          not scored · asks to replace {product.name}
+                        </span>
+                      ) : (
+                        <>
+                          <div className="w-28">
+                            <Bar pct={stat.runs ? (stat.mentioned / stat.runs) * 100 : 0} />
+                          </div>
+                          <span className="w-12 text-right font-mono text-sm font-semibold">
+                            {stat.mentioned}/{stat.runs}
+                          </span>
+                          <span
+                            className={`w-16 text-right text-xs ${
+                              stat.avgPosition !== null ? "text-stone-500" : "text-rose-500"
+                            }`}
+                          >
+                            {stat.avgPosition !== null ? (
+                              `avg #${stat.avgPosition}`
+                            ) : (
+                              <>
+                                <span
+                                  aria-hidden="true"
+                                  className="inline-block animate-[ghost-float_2s_ease-in-out_infinite] motion-reduce:animate-none"
+                                >
+                                  👻
+                                </span>{" "}
+                                never
+                              </>
+                            )}
+                          </span>
+                        </>
+                      )}
                       {answerRuns.length > 0 && (
                         <span
                           className="inline-flex shrink-0 items-center gap-1 rounded-full border-2 border-stone-300 bg-white px-2.5 py-0.5 font-mono text-xs font-semibold text-stone-600 transition-all group-hover:border-stone-900 group-hover:text-stone-900 group-open:border-emerald-500 group-open:bg-emerald-50 group-open:text-emerald-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400 dark:group-hover:border-stone-400 dark:group-hover:text-stone-100 dark:group-open:border-emerald-500 dark:group-open:bg-emerald-950 dark:group-open:text-emerald-300"
@@ -426,7 +437,11 @@ export default async function ProductPage({ params }: PageProps<"/[product]">) {
                         <summary className="cursor-pointer list-none rounded-xl transition-colors hover:bg-stone-50 [&::-webkit-details-marker]:hidden dark:hover:bg-stone-900">
                           {row}
                         </summary>
-                        <AnswersPanel runs={answerRuns} product={product} />
+                        <AnswersPanel
+                          runs={answerRuns}
+                          product={product}
+                          leaderEcho={stat.excluded}
+                        />
                       </details>
                     ) : (
                       row

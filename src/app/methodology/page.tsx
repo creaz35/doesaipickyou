@@ -59,6 +59,13 @@ export default async function MethodologyPage() {
           case-sensitively. If a product is missing an alias, its score is understated: that is a
           bug in the table, and a one-line pull request fixes it.
         </p>
+        <p className="text-stone-600 dark:text-stone-400">
+          One exception: on the two prompts that name the category leader (&ldquo;alternatives to
+          Buffer&rdquo;), the leader itself is not counted, because answers echo the
+          question&rsquo;s subject back and an echo is not a recommendation. Those runs also leave
+          the leader&rsquo;s denominator, so leaders are scored over their four eligible prompts
+          and everyone else over all six, and both can reach 100.
+        </p>
       </section>
 
       <section className="space-y-3">

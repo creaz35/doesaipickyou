@@ -1,5 +1,5 @@
 import { CATEGORIES } from "@/data/categories";
-import { renderPrompt, TEMPLATES } from "@/data/templates";
+import { LEADER_TEMPLATE_IDS, renderPrompt, TEMPLATES } from "@/data/templates";
 import { positionWeight, scoreCategory } from "./scoring";
 import type { CategoryDef, ModelId, ProductDef, ProductScore, Snapshot } from "./types";
 
@@ -9,6 +9,12 @@ export interface PromptStat {
   mentioned: number;
   runs: number;
   avgPosition: number | null;
+  /**
+   * True when this product is the category leader and the prompt names
+   * it ("alternatives to Buffer" on Buffer's page): not scored, because
+   * an answer echoing the question is not a recommendation.
+   */
+  excluded: boolean;
 }
 
 export interface ModelStat {
@@ -72,6 +78,8 @@ export function getProductStats(
     const score = board[rank - 1];
     const categoryRuns = snapshot.runs.filter((r) => r.categorySlug === category.slug);
 
+    const isLeader = productId === category.leader;
+
     const promptStats: PromptStat[] = TEMPLATES.map((template) => {
       const templateRuns = categoryRuns.filter((r) => r.templateId === template.id);
       let mentioned = 0;
@@ -89,11 +97,18 @@ export function getProductStats(
         mentioned,
         runs: templateRuns.length,
         avgPosition: mentioned ? Math.round((positionSum / mentioned) * 10) / 10 : null,
+        excluded: isLeader && LEADER_TEMPLATE_IDS.has(template.id),
       };
     });
 
+    // Same eligibility rule as scoring: the leader's per-model numbers
+    // ignore the runs that name it in the question.
+    const eligibleRuns = isLeader
+      ? categoryRuns.filter((r) => !LEADER_TEMPLATE_IDS.has(r.templateId))
+      : categoryRuns;
+
     const modelStats: ModelStat[] = snapshot.models.map((model: ModelId) => {
-      const modelRuns = categoryRuns.filter((r) => r.model === model);
+      const modelRuns = eligibleRuns.filter((r) => r.model === model);
       let mentioned = 0;
       let weightSum = 0;
       for (const run of modelRuns) {

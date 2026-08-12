@@ -160,14 +160,24 @@ function AnswerBody({ answer, product }: { answer: string; product: ProductDef }
   );
 }
 
-export function AnswersPanel({ runs, product }: { runs: PromptRun[]; product: ProductDef }) {
+export function AnswersPanel({
+  runs,
+  product,
+  leaderEcho = false,
+}: {
+  runs: PromptRun[];
+  product: ProductDef;
+  /** True on prompts that name this product ("alternatives to Buffer"). */
+  leaderEcho?: boolean;
+}) {
   return (
     <div className="mt-3 space-y-3 rounded-2xl border-2 border-stone-200 bg-stone-50 p-3 sm:p-4 dark:border-stone-800 dark:bg-stone-900/50">
       {runs.map((run) => {
         const mention = run.mentions.find((m) => m.productId === product.id);
+        const named = answerNamesProduct(run.answer ?? "", product);
         // Named by today's aliases but not counted at run time: the tool
         // (or the alias) was added to the catalog after this run happened.
-        const missedByRun = !mention && answerNamesProduct(run.answer ?? "", product);
+        const missedByRun = !mention && !leaderEcho && named;
         return (
           <article
             key={`${run.model}-${run.runIndex}`}
@@ -182,6 +192,13 @@ export function AnswersPanel({ runs, product }: { runs: PromptRun[]; product: Pr
               {mention ? (
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-mono text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                   named #{mention.position}
+                </span>
+              ) : leaderEcho && named ? (
+                <span
+                  className="rounded-full bg-stone-100 px-2 py-0.5 font-mono text-stone-500 dark:bg-stone-800 dark:text-stone-400"
+                  title={`The prompt names ${product.name}, so the answer repeating it is not a recommendation and is not counted.`}
+                >
+                  🔁 echoes the question
                 </span>
               ) : missedByRun ? (
                 <span
