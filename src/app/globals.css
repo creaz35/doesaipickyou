@@ -45,14 +45,12 @@ body {
   }
 }
 
-/* Each sponsor in the mobile ticker slides in as the rotation advances. */
-@keyframes ticker-in {
+/* The mobile sponsor bars scroll their content in an endless loop. */
+@keyframes marquee {
   from {
-    opacity: 0;
-    transform: translateY(8px);
+    transform: translateX(0);
   }
   to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-100%);
   }
 }

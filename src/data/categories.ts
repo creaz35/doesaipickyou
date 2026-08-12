@@ -118,6 +118,10 @@ export const CATEGORIES: CategoryDef[] = [
       { id: "capcut", name: "CapCut", url: "https://capcut.com", price: "Free + $10/mo", aliases: ["CapCut", "Capcut"] },
       { id: "descript", name: "Descript", url: "https://descript.com", price: "Free + $15/mo", aliases: ["Descript"] },
       { id: "heygen", name: "HeyGen", url: "https://heygen.com", price: "Free + $29/mo", aliases: ["HeyGen", "Heygen"] },
+      { id: "invideo", name: "InVideo", url: "https://invideo.io", price: "Free + $28/mo", aliases: ["InVideo", "InVideo AI"] },
+      { id: "synthesia", name: "Synthesia", url: "https://synthesia.io", price: "Free + $29/mo", aliases: ["Synthesia"] },
+      { id: "veed", name: "VEED", url: "https://veed.io", price: "Free + $12/mo", aliases: ["VEED", "Veed.io"] },
+      { id: "captions", name: "Captions", url: "https://captions.ai", price: "Free + $10/mo", aliases: [{ text: "Captions", caseSensitive: true }, "Captions app", "captions.ai"] },
     ],
   },
   {

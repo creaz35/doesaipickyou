@@ -350,7 +350,8 @@ export default async function ProductPage({ params }: PageProps<"/[product]">) {
 
           <div>
             <h3 className="mb-3 font-display text-lg font-bold">Prompt by prompt</h3>
-            <ul className="space-y-3">
+            {/* Stacked two-line rows on mobile need clear separation. */}
+            <ul className="space-y-7 sm:space-y-3">
               {entry.promptStats.map((stat) => {
                 // Runs that kept their answer text (real snapshots from now
                 // on; mock data and older runs have none).

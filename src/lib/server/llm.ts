@@ -6,7 +6,7 @@ import type { ModelId } from "@/lib/types";
  * present. Model ids are env-overridable so upgrades don't need a deploy
  * of code changes.
  */
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-5-mini";
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5";
 
 export function availableModels(): ModelId[] {

@@ -7,8 +7,8 @@ import { AuthMenu } from "@/components/AuthMenu";
 import { BrandMark } from "@/components/BrandMark";
 import { MobileNav } from "@/components/MobileNav";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { SponsorBar } from "@/components/SponsorBar";
 import { SponsorRail } from "@/components/SponsorRail";
-import { SponsorTicker } from "@/components/SponsorTicker";
 import { AuthProvider } from "@/lib/auth-context";
 import { getSponsors } from "@/lib/sponsor-data";
 import "./globals.css";
@@ -70,7 +70,7 @@ gtag('config', '${GA_ID}');`}
         )}
         <PageViewTracker />
         <AuthProvider>
-          <SponsorTicker sponsors={sponsors} />
+          <SponsorBar sponsors={sponsors} position="top" />
           <header className="relative border-b-2 border-stone-900 dark:border-stone-700">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
               <Link
@@ -186,6 +186,9 @@ gtag('config', '${GA_ID}');`}
               </Link>
             </div>
           </footer>
+          {/* Breathing room so the fixed bottom bar never covers the footer. */}
+          <div aria-hidden="true" className="h-12 2xl:hidden" />
+          <SponsorBar sponsors={sponsors} position="bottom" />
         </AuthProvider>
       </body>
     </html>
