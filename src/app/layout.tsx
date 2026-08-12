@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import { AuthMenu } from "@/components/AuthMenu";
 import { BrandMark } from "@/components/BrandMark";
 import { MobileNav } from "@/components/MobileNav";
@@ -30,6 +31,10 @@ const bricolage = Bricolage_Grotesque({
 
 const GITHUB_URL = "https://github.com/creaz35/doesaipickyou";
 
+// GA4 loads only when the measurement id is configured; inlined at build
+// time, so setting it requires a rebuild, not a code change.
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
 export const metadata: Metadata = {
   title: {
     default: "Does AI Pick You?",
@@ -49,6 +54,20 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
+            </Script>
+          </>
+        )}
         <PageViewTracker />
         <AuthProvider>
           <SponsorTicker sponsors={sponsors} />
@@ -141,6 +160,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 <span className="decoration-emerald-500 decoration-wavy underline-offset-4 group-hover:underline">
                   Brian Millot
                 </span>
+              </a>
+              <span aria-hidden="true">·</span>
+              <a
+                href={`${GITHUB_URL}/blob/main/CONTRIBUTING.md`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-stone-900 hover:underline dark:hover:text-stone-100"
+              >
+                submit your tool
               </a>
               <span aria-hidden="true">·</span>
               <Link

@@ -1,6 +1,8 @@
-# doesaipickyou.com
+# [doesaipickyou.com](https://doesaipickyou.com)
 
 **Does AI pick you?** We ask ChatGPT, Claude, Gemini and Perplexity the questions your buyers actually ask, like *"best form builder for a solo founder"* and *"alternatives to Mailchimp"*, and track which products they recommend. Public monthly leaderboards of AI visibility for indie SaaS.
+
+**→ See the live leaderboards at [doesaipickyou.com](https://doesaipickyou.com)**
 
 ## How it works
 
@@ -43,13 +45,9 @@ stays hidden.
 
 ## Contributing
 
-The highest-value contributions are data fixes, not features:
+**Want your tool on the leaderboards?** Add it to `src/data/categories.ts` in a PR, or open an [Add a tool](../../issues/new?template=add-tool.yml) issue if PRs aren't your thing. Full instructions, including the alias rules that decide your score, are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-- **Missing alias**: a product's score is understated because the models call it something we don't match. One-line fix in `src/data/categories.ts`.
-- **Missing product**: a product that belongs in a tracked category. Add it with a stable `id` (never rename ids; history keys on them).
-- **New category**: add the category noun, leader, and product list. The six templates apply automatically.
-
-Prompt templates and position weights are part of the published methodology. Changing them invalidates historical comparisons, so they only change with a very good reason.
+The highest-value contributions are data fixes, not features: missing aliases, missing products, new categories. Prompt templates and position weights are published methodology; changing them invalidates historical comparisons, so they only change with a very good reason.
 
 ## Roadmap
 

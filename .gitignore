@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# npm config (can hold auth tokens)
+.npmrc
+
 # vercel
 .vercel
 

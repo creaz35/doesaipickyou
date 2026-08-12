@@ -1,0 +1,62 @@
+name: Add a tool
+description: Get your product on the leaderboards without opening a PR.
+title: "Add [tool name] to [category]"
+labels: ["catalog"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Faster route: add it yourself in `src/data/categories.ts` via PR (see CONTRIBUTING.md).
+        This form is the no-git alternative; a maintainer adds it manually.
+  - type: input
+    id: name
+    attributes:
+      label: Tool name
+      placeholder: YourTool
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Homepage URL
+      placeholder: https://yourtool.com
+    validations:
+      required: true
+  - type: input
+    id: category
+    attributes:
+      label: Category
+      description: An existing category on the site, or say "new category" and explain below.
+      placeholder: Form builders
+    validations:
+      required: true
+  - type: input
+    id: price
+    attributes:
+      label: Price, short form
+      placeholder: Free + $9/mo
+    validations:
+      required: true
+  - type: input
+    id: aliases
+    attributes:
+      label: Aliases
+      description: Every name AI models use for the product, comma separated. Include the name itself. Flag common-word names ("Later") so they can be matched case-sensitively.
+      placeholder: YourTool, Your Tool, yourtool.com
+    validations:
+      required: true
+  - type: dropdown
+    id: relationship
+    attributes:
+      label: Your relationship to the tool
+      options:
+        - I built it / work on it
+        - I use it
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      placeholder: New category proposal, alias edge cases, etc.
