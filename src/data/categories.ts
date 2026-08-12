@@ -14,6 +14,10 @@ import type { CategoryDef } from "@/lib/types";
  *   prompts: the best-known paid tool, not necessarily the best one.
  * - `price` is a short display string (entry paid tier, rounded). Prices
  *   drift; treat them as editorial data and review each snapshot cycle.
+ * - `noun` is the BARE product noun ("CRM", "screen recorder"). The
+ *   templates supply the buyer context; a qualifier baked into the noun
+ *   renders as "best CRM for a solo founder for a solo founder". Keep
+ *   positioning in `name`, not in `noun`.
  */
 export const CATEGORIES: CategoryDef[] = [
   {
@@ -35,7 +39,7 @@ export const CATEGORIES: CategoryDef[] = [
     slug: "email-marketing",
     emoji: "📬",
     name: "Email marketing for creators",
-    noun: "email marketing tool for creators",
+    noun: "email marketing tool",
     leader: "mailchimp",
     products: [
       { id: "mailchimp", name: "Mailchimp", url: "https://mailchimp.com", price: "Free + $13/mo", aliases: ["Mailchimp", "MailChimp"] },
@@ -109,7 +113,7 @@ export const CATEGORIES: CategoryDef[] = [
     slug: "ai-video-generators",
     emoji: "🎬",
     name: "AI video generators for shorts",
-    noun: "AI video tool for short-form content",
+    noun: "short-form AI video tool",
     leader: "runway",
     products: [
       { id: "runway", name: "Runway", url: "https://runwayml.com", price: "Free + $15/mo", aliases: [{ text: "Runway", caseSensitive: true }, "RunwayML", "Runway ML"] },
@@ -128,7 +132,7 @@ export const CATEGORIES: CategoryDef[] = [
     slug: "screen-recorders",
     emoji: "🎥",
     name: "Screen recorders for demos",
-    noun: "screen recorder for product demos",
+    noun: "screen recorder",
     leader: "loom",
     products: [
       { id: "loom", name: "Loom", url: "https://loom.com", price: "Free + $15/mo", aliases: [{ text: "Loom", caseSensitive: true }] },
@@ -171,7 +175,7 @@ export const CATEGORIES: CategoryDef[] = [
     slug: "crm",
     emoji: "🤝",
     name: "CRMs for solo founders",
-    noun: "CRM for a solo founder",
+    noun: "CRM",
     leader: "hubspot",
     products: [
       { id: "hubspot", name: "HubSpot", url: "https://hubspot.com", price: "Free + $20/mo", aliases: ["HubSpot", "Hubspot"] },

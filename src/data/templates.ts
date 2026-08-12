@@ -24,14 +24,27 @@ export const TEMPLATES: PromptTemplate[] = [
   { id: "small-budget", text: "recommend a {cat}, I have a small budget and no team" },
 ];
 
+/**
+ * "a CRM" but "an SEO research tool" and "an AI writing assistant".
+ * Acronyms take the article of the letter name (es-ee-oh), not the letter.
+ */
+function needsAn(noun: string): boolean {
+  const word = noun.split(" ")[0];
+  if (/^[A-Z]{2,}/.test(word)) return "AEFHILMNORSX".includes(word[0]);
+  return "aeiou".includes(word[0].toLowerCase());
+}
+
 export function renderPrompt(template: PromptTemplate, category: CategoryDef): string {
   const leader = category.products.find((p) => p.id === category.leader);
   if (!leader) throw new Error(`Category ${category.slug}: leader "${category.leader}" not in products`);
   let text = template.text;
-  // "best AI-powered AI video generator" reads broken, so drop the qualifier
-  // when the category noun already leads with "AI".
-  if (template.id === "best-ai" && category.noun.startsWith("AI ")) {
+  // "best AI-powered short-form AI video tool" doubles the AI, so drop the
+  // qualifier when the noun already carries it.
+  if (template.id === "best-ai" && /\bAI\b/.test(category.noun)) {
     text = "best {cat} in 2026";
+  }
+  if (needsAn(category.noun)) {
+    text = text.replaceAll("a {cat}", "an {cat}");
   }
   return text.replaceAll("{cat}", category.noun).replaceAll("{leader}", leader.name);
 }
