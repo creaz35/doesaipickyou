@@ -1,0 +1,167 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only firestore:rules
+//
+// This file is the real access boundary. The /admin page's client-side check
+// is only for UX: anyone can edit client JavaScript, so nothing here may
+// depend on the UI having gated a route.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // --- Anonymous counter helpers (stats + clicks collections) -----------
+    // Visitors' browsers increment traffic counters directly, so these
+    // rules must hold against hostile clients: a write may bump a counter
+    // by at most 1 and may never lower, inflate, or remove one. Spamming
+    // +1 in a loop remains possible (as with any analytics), but the
+    // numbers can only ever move the way real traffic moves them.
+
+    // On create the field may only be absent, 0, or 1.
+    function newCounterOk(field) {
+      return !(field in request.resource.data)
+        || (request.resource.data[field] is int
+            && request.resource.data[field] >= 0
+            && request.resource.data[field] <= 1);
+    }
+
+    // On update the field may only stay put or grow by exactly 1.
+    function counterBumpOk(field) {
+      return !(field in request.resource.data)
+        || (request.resource.data[field] is int
+            && request.resource.data[field] >= resource.data.get(field, 0)
+            && request.resource.data[field] <= resource.data.get(field, 0) + 1);
+    }
+
+    // Daily stat docs carry exactly these fields and a YYYY-MM-DD date.
+    function statShapeOk() {
+      return request.resource.data.keys().hasOnly(
+          ['date', 'views', 'visitors', 'newVisitors', 'toolClicks', 'sponsorClicks'])
+        && request.resource.data.date is string
+        && request.resource.data.date.size() == 10;
+    }
+
+    match /users/{userId} {
+      // Users read their own profile; admins read everyone's.
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+
+      // On create, role must be exactly 'user'. This is what stops someone
+      // from signing up with role: 'admin' straight from the browser console.
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == 'user'
+        && request.resource.data.uid == userId;
+
+      // Users may edit their own name and photo, never their role.
+      allow update: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.uid == resource.data.uid;
+
+      // Admin promotion happens in the Firebase console, and deletion is
+      // never a client operation.
+      allow delete: if false;
+    }
+
+    // The catalog is public data (the site shows it to everyone); only
+    // admins may change it.
+    match /categories/{slug} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /tools/{toolId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Newsletter list. Anyone may add an address (that is the signup form),
+    // but the doc id must equal the email, so a create can only ever write
+    // that one row. Because create fails when the doc already exists, a
+    // second signup cannot overwrite or probe an existing subscriber, and
+    // only admins can read the list.
+    match /subscribers/{email} {
+      allow get, list: if isAdmin();
+      allow create: if request.resource.data.email == email
+        && email.matches('^[^@]+@[^@]+[.][^@]+$')
+        && email.size() < 320
+        && request.resource.data.source in ['newsletter', 'signup'];
+      allow update, delete: if isAdmin();
+    }
+
+    // Live sponsor spots: the rails render from these, so they are public.
+    // Only admins write; activation happens in /admin after Stripe confirms
+    // payment. Buyer emails are never stored here.
+    match /sponsors/{sessionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Site settings, e.g. settings/sponsor { priceUsd }. Public read: the
+    // /sponsor page shows the price. Only admins change it.
+    match /settings/{key} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Daily traffic rollups behind the public /stats page: one doc per UTC
+    // day. Anyone may read and bump; only admins may delete.
+    match /stats/{day} {
+      allow read: if true;
+      allow create: if statShapeOk()
+        && newCounterOk('views')
+        && newCounterOk('visitors')
+        && newCounterOk('newVisitors')
+        && newCounterOk('toolClicks')
+        && newCounterOk('sponsorClicks');
+      allow update: if statShapeOk()
+        && counterBumpOk('views')
+        && counterBumpOk('visitors')
+        && counterBumpOk('newVisitors')
+        && counterBumpOk('toolClicks')
+        && counterBumpOk('sponsorClicks');
+      allow delete: if isAdmin();
+    }
+
+    // Per-entity outbound click totals: clicks/tool-{id} and
+    // clicks/sponsor-{sessionId}, shown in /admin. Same bump-only rules.
+    match /clicks/{key} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['key', 'count'])
+        && request.resource.data.key == key
+        && request.resource.data.count == 1;
+      allow update: if request.resource.data.keys().hasOnly(['key', 'count'])
+        && request.resource.data.key == key
+        && request.resource.data.count is int
+        && request.resource.data.count >= resource.data.get('count', 0)
+        && request.resource.data.count <= resource.data.get('count', 0) + 1;
+      allow delete: if isAdmin();
+    }
+
+    // Snapshot history: public data, written only by admins via the
+    // snapshot runner.
+    match /snapshots/{snapshotId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /categories/{slug} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
+    // Anything not matched above is denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
