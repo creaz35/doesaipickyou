@@ -42,9 +42,13 @@ export async function generateMetadata({ params }: PageProps<"/[product]">): Pro
   const { product: productId } = await params;
   const resolved = await resolveProduct(productId);
   if (!resolved) return {};
+  const title = `${resolved.product.name} AI visibility`;
+  const description = `Do AI models recommend ${resolved.product.name}? Rank, prompt-by-prompt breakdown, and who beats it.`;
   return {
-    title: `${resolved.product.name} AI visibility`,
-    description: `Do AI models recommend ${resolved.product.name}? Rank, prompt-by-prompt breakdown, and who beats it.`,
+    title,
+    description,
+    openGraph: { title, description, url: `/${productId}`, type: "article" },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 

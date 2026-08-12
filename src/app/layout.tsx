@@ -35,13 +35,33 @@ const GITHUB_URL = "https://github.com/creaz35/doesaipickyou";
 // time, so setting it requires a rebuild, not a code change.
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
+const SITE_URL = "https://doesaipickyou.com";
+const DESCRIPTION =
+  "We ask ChatGPT, Claude, Gemini and Perplexity the questions your buyers ask, and track which products they actually recommend. Refreshed monthly.";
+
 export const metadata: Metadata = {
+  // Makes the generated opengraph-image URLs absolute, which every social
+  // platform requires.
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Does AI Pick You?",
     template: "%s · Does AI Pick You?",
   },
-  description:
-    "We ask ChatGPT, Claude, Gemini and Perplexity the questions your buyers ask, and track which products they actually recommend. Refreshed monthly.",
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "Does AI Pick You?",
+    title: "Does AI Pick You?",
+    description: DESCRIPTION,
+    url: SITE_URL,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Does AI Pick You?",
+    description: DESCRIPTION,
+    creator: "@brian_millot",
+  },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
