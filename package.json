@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "snapshot:mock": "tsx scripts/generate-mock-snapshot.ts",
-    "check:parser": "tsx scripts/check-parser.ts"
+    "check:parser": "tsx scripts/check-parser.ts",
+    "indexnow": "tsx scripts/submit-indexnow.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
