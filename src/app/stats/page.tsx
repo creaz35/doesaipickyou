@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { WhoIsHere } from "@/components/WhoIsHere";
 import { getSiteData } from "@/lib/site-data";
 import { getSiteStats } from "@/lib/stats-data";
 
@@ -68,6 +69,8 @@ export default async function StatsPage() {
           🚧 No traffic recorded yet. Counting starts as soon as the first visitor lands.
         </div>
       )}
+
+      <WhoIsHere />
 
       <section>
         <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-stone-500">

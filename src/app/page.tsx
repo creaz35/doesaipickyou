@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Newsletter } from "@/components/Newsletter";
 import { ToolExplorer, type CategoryTab } from "@/components/ToolExplorer";
+import { WhoIsHere } from "@/components/WhoIsHere";
 import { getSiteData } from "@/lib/site-data";
 import { MODEL_LABELS } from "@/lib/types";
 
@@ -91,6 +92,8 @@ export default async function Home() {
       )}
 
       <ToolExplorer categories={tabs} />
+
+      <WhoIsHere />
 
       <Newsletter />
     </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AnswersPanel } from "@/components/PromptAnswers";
+import { ShareButtons } from "@/components/ShareButtons";
 import { ToolIcon } from "@/components/ToolIcon";
 import { TrackedLink } from "@/components/TrackedLink";
 import { CATEGORIES } from "@/data/categories";
@@ -244,6 +245,22 @@ export default async function ProductPage({ params }: PageProps<"/[product]">) {
             </span>
           ))}
         </p>
+        <div className="mt-3">
+          <ShareButtons
+            name={product.name}
+            productId={productId}
+            stat={
+              stats[0]
+                ? {
+                    visibility: stats[0].score.visibility,
+                    rank: stats[0].rank,
+                    total: stats[0].totalProducts,
+                    categoryName: stats[0].category.name,
+                  }
+                : null
+            }
+          />
+        </div>
       </div>
 
       {snapshot?.mock && (

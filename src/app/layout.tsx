@@ -7,6 +7,7 @@ import { AuthMenu } from "@/components/AuthMenu";
 import { BrandMark } from "@/components/BrandMark";
 import { MobileNav } from "@/components/MobileNav";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { PresenceBeacon } from "@/components/WhoIsHere";
 import { SponsorBar } from "@/components/SponsorBar";
 import { SponsorRail } from "@/components/SponsorRail";
 import { AuthProvider } from "@/lib/auth-context";
@@ -89,6 +90,7 @@ gtag('config', '${GA_ID}');`}
           </>
         )}
         <PageViewTracker />
+        <PresenceBeacon />
         <AuthProvider>
           <SponsorBar sponsors={sponsors} position="top" />
           <header className="relative border-b-2 border-stone-900 dark:border-stone-700">
