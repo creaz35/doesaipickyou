@@ -9,6 +9,7 @@ import {
   deleteToolEverywhere,
   fetchCategoryDocs,
   fetchToolDocs,
+  RESERVED_SLUGS,
   saveCategoryDoc,
   saveToolDoc,
   seedCatalogFromStatic,
@@ -26,6 +27,11 @@ import {
   setSponsorRenewal,
 } from "@/lib/firebase/sponsors";
 import { fetchClickCounts } from "@/lib/firebase/stats";
+import {
+  fetchAllSubmissions,
+  setSubmissionStatus,
+  type ToolSubmission,
+} from "@/lib/firebase/submissions";
 import { fetchSubscribers, type Subscriber } from "@/lib/firebase/subscribers";
 import { USERS_COLLECTION, type UserProfile } from "@/lib/firebase/users";
 import {
@@ -47,11 +53,19 @@ const RUNNER_KEY_HINT: Record<string, string> = {
   anthropic: "ANTHROPIC_API_KEY",
 };
 
-type AdminTab = "users" | "subscribers" | "sponsors" | "categories" | "tools" | "settings";
+type AdminTab =
+  | "users"
+  | "subscribers"
+  | "submissions"
+  | "sponsors"
+  | "categories"
+  | "tools"
+  | "settings";
 
 const TABS: { id: AdminTab; label: string }[] = [
   { id: "users", label: "👤 Users" },
   { id: "subscribers", label: "📬 Subscribers" },
+  { id: "submissions", label: "📥 Submissions" },
   { id: "sponsors", label: "🪧 Sponsors" },
   { id: "categories", label: "🗂️ Categories" },
   { id: "tools", label: "🛠️ Tools" },
@@ -96,6 +110,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<AdminTab>("users");
   const [users, setUsers] = useState<UserProfile[] | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[] | null>(null);
+  const [toolSubmissions, setToolSubmissions] = useState<ToolSubmission[] | null>(null);
   const [categories, setCategories] = useState<CategoryDoc[] | null>(null);
   const [tools, setTools] = useState<ToolDoc[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -129,18 +144,28 @@ export default function AdminPage() {
   const loadAll = useCallback(async () => {
     try {
       const db = getDb();
-      const [userSnap, subscriberDocs, categoryDocs, toolDocs, sponsorDocs, price, clicks] =
-        await Promise.all([
-          getDocs(query(collection(db, USERS_COLLECTION), orderBy("createdAt", "desc"))),
-          fetchSubscribers(db),
-          fetchCategoryDocs(db),
-          fetchToolDocs(db),
-          fetchSponsors(db),
-          fetchSponsorPriceUsd(db),
-          fetchClickCounts(db),
-        ]);
+      const [
+        userSnap,
+        subscriberDocs,
+        categoryDocs,
+        toolDocs,
+        sponsorDocs,
+        price,
+        clicks,
+        submissionDocs,
+      ] = await Promise.all([
+        getDocs(query(collection(db, USERS_COLLECTION), orderBy("createdAt", "desc"))),
+        fetchSubscribers(db),
+        fetchCategoryDocs(db),
+        fetchToolDocs(db),
+        fetchSponsors(db),
+        fetchSponsorPriceUsd(db),
+        fetchClickCounts(db),
+        fetchAllSubmissions(db),
+      ]);
       setUsers(userSnap.docs.map((d) => d.data() as UserProfile));
       setSubscribers(subscriberDocs);
+      setToolSubmissions(submissionDocs);
       setCategories(categoryDocs);
       setTools(toolDocs);
       setSponsors(sponsorDocs);
@@ -274,6 +299,45 @@ export default function AdminPage() {
     }
   }
 
+  /** Approves a submission: copies it into the catalog, claimed by the submitter. */
+  async function approveSubmission(submission: ToolSubmission) {
+    setBusyId(submission.id);
+    try {
+      await saveToolDoc(getDb(), {
+        id: submission.id,
+        name: submission.name,
+        url: submission.url,
+        price: submission.price,
+        aliases: submission.aliases,
+        categorySlugs: submission.categorySlugs,
+        ownerUid: submission.uid,
+      });
+      await setSubmissionStatus(getDb(), submission.id, "active");
+      appendLog(
+        `✅ ${submission.name} approved and added to the catalog, claimed by ${submission.email ?? submission.uid}. ` +
+          "Hit ▶ on its category to rank it, and mirror it into src/data/categories.ts when convenient.",
+      );
+      await loadAll();
+    } catch {
+      appendLog(`❌ Could not approve ${submission.name}.`);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function rejectSubmission(submission: ToolSubmission) {
+    setBusyId(submission.id);
+    try {
+      await setSubmissionStatus(getDb(), submission.id, "rejected");
+      appendLog(`🚫 ${submission.name} rejected. The submitter sees the status on /submission.`);
+      await loadAll();
+    } catch {
+      appendLog(`❌ Could not reject ${submission.name}.`);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   /** Publishes a paid Stripe purchase into its rail spot. */
   async function activatePurchase(purchase: SponsorPurchase) {
     setBusyId(purchase.sessionId);
@@ -338,6 +402,9 @@ export default function AdminPage() {
     if (!name) return setAddToolError("Name is required.");
     if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) {
       return setAddToolError("Id must be lowercase letters, digits and dashes.");
+    }
+    if (RESERVED_SLUGS.has(id)) {
+      return setAddToolError(`"${id}" is a reserved route name; the tool's page would never render.`);
     }
     if (!editingToolId && (tools ?? []).some((t) => t.id === id)) {
       return setAddToolError(`Id "${id}" is already taken.`);
@@ -632,6 +699,9 @@ export default function AdminPage() {
             <span className="ml-1.5 font-mono text-xs opacity-70">
               {t.id === "users" ? users?.length ?? "…" : null}
               {t.id === "subscribers" ? subscribers?.length ?? "…" : null}
+              {t.id === "submissions"
+                ? toolSubmissions?.filter((s) => s.status === "pending").length ?? "…"
+                : null}
               {t.id === "sponsors"
                 ? sponsors?.filter((s) => sponsorIsActive(s)).length ?? "…"
                 : null}
@@ -731,6 +801,115 @@ export default function AdminPage() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {tab === "submissions" && (
+        <section className="space-y-3">
+          <p className="text-sm text-stone-500">
+            In-site tool submissions from /submission. Approving copies the tool into the
+            catalog with the submitter as its claimed owner; edit it afterwards from the Tools
+            tab if the aliases need polish.
+          </p>
+          {toolSubmissions && toolSubmissions.length === 0 ? (
+            <p className="py-8 text-center text-stone-500">No submissions yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={HEAD_ROW_CLASS}>
+                    <th className={TH_CLASS}>Tool</th>
+                    <th className={TH_CLASS}>Id</th>
+                    <th className={TH_CLASS}>Categories</th>
+                    <th className={TH_CLASS}>Aliases</th>
+                    <th className={TH_CLASS}>Price</th>
+                    <th className={TH_CLASS}>By</th>
+                    <th className={TH_CLASS}>Status</th>
+                    <th className="py-2 font-medium">Review</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(toolSubmissions ?? []).map((s) => {
+                    const idTaken =
+                      s.status === "pending" && (tools ?? []).some((t) => t.id === s.id);
+                    return (
+                      <tr key={s.id} className={ROW_CLASS}>
+                        <td className="py-2.5 pr-4">
+                          <span className="flex items-center gap-2 font-medium">
+                            <ToolIcon name={s.name} url={s.url} size={20} />
+                            <a
+                              href={s.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline"
+                            >
+                              {s.name}
+                            </a>
+                          </span>
+                        </td>
+                        <td className="py-2.5 pr-4 font-mono text-xs">{s.id}</td>
+                        <td className="py-2.5 pr-4">
+                          {s.categorySlugs.map((slug) => (
+                            <span key={slug} className="mr-1" title={categoryBySlug.get(slug)?.name ?? slug}>
+                              {categoryBySlug.get(slug)?.emoji ?? slug}
+                            </span>
+                          ))}
+                        </td>
+                        <td
+                          className="py-2.5 pr-4 font-mono text-xs"
+                          title={s.aliases.map((a) => (a.caseSensitive ? `${a.text}!` : a.text)).join(", ")}
+                        >
+                          {s.aliases.length}
+                        </td>
+                        <td className="py-2.5 pr-4 font-mono text-xs">{s.price}</td>
+                        <td className="py-2.5 pr-4 font-mono text-xs">{s.email ?? s.uid}</td>
+                        <td className="py-2.5 pr-4">
+                          <span
+                            className={`rounded-full px-2 py-0.5 font-mono text-xs ${
+                              s.status === "pending"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                : s.status === "active"
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                                  : "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                            }`}
+                          >
+                            {s.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5">
+                          {s.status === "pending" && (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                disabled={busyId !== null || idTaken}
+                                title={
+                                  idTaken
+                                    ? `Id "${s.id}" already exists in the catalog. Reject, or resolve the clash first.`
+                                    : `Approve ${s.name} into the catalog`
+                                }
+                                onClick={() => void approveSubmission(s)}
+                                className="rounded-lg border-2 border-stone-300 px-2.5 py-0.5 text-xs font-semibold transition-colors hover:border-emerald-500 disabled:opacity-50 dark:border-stone-700"
+                              >
+                                {busyId === s.id ? "…" : "✓ Approve"}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyId !== null}
+                                onClick={() => void rejectSubmission(s)}
+                                className="rounded-lg border-2 border-stone-300 px-2.5 py-0.5 text-xs font-semibold transition-colors hover:border-rose-500 hover:text-rose-600 disabled:opacity-50 dark:border-stone-700"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

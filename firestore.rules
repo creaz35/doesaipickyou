@@ -98,6 +98,34 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // In-site tool submissions (/submission). Signed-in users create their
+    // own, always as 'pending'; they can read back only their own rows.
+    // Only admins change status: approval copies the submission into the
+    // tools collection with ownerUid set, which is what "claimed" means.
+    match /submissions/{id} {
+      allow get, list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.id == id
+        && request.resource.data.keys().hasOnly(
+            ['id', 'name', 'url', 'price', 'aliases', 'categorySlugs', 'status', 'uid', 'email', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 48
+        && request.resource.data.url is string
+        && request.resource.data.url.size() <= 200
+        && request.resource.data.price is string
+        && request.resource.data.price.size() <= 40
+        && request.resource.data.aliases is list
+        && request.resource.data.aliases.size() > 0
+        && request.resource.data.aliases.size() <= 12
+        && request.resource.data.categorySlugs is list
+        && request.resource.data.categorySlugs.size() > 0
+        && request.resource.data.categorySlugs.size() <= 5;
+      allow update, delete: if isAdmin();
+    }
+
     // Live sponsor spots: the rails render from these, so they are public.
     // Only admins write; activation happens in /admin after Stripe confirms
     // payment. Buyer emails are never stored here.

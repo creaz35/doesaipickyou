@@ -181,29 +181,35 @@ gtag('config', '${GA_ID}');`}
                   Brian Millot
                 </span>
               </a>
-              <span aria-hidden="true">·</span>
-              <a
-                href={`${GITHUB_URL}/blob/main/CONTRIBUTING.md`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-stone-900 hover:underline dark:hover:text-stone-100"
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 px-4">
+              <Link
+                href="/submission"
+                className="group inline-flex items-center gap-1.5 rounded-full border-2 border-stone-900 bg-emerald-500 px-4 py-1.5 font-semibold text-white shadow-[3px_3px_0_0_var(--ink)] transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--ink)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--ink)] dark:border-stone-600"
               >
+                <span
+                  aria-hidden="true"
+                  className="inline-block transition-transform duration-200 group-hover:rotate-90"
+                >
+                  ＋
+                </span>
                 submit your tool
-              </a>
-              <span aria-hidden="true">·</span>
-              <Link
-                href="/terms"
-                className="hover:text-stone-900 hover:underline dark:hover:text-stone-100"
-              >
-                terms
               </Link>
-              <span aria-hidden="true">·</span>
-              <Link
-                href="/privacy"
-                className="hover:text-stone-900 hover:underline dark:hover:text-stone-100"
-              >
-                privacy
-              </Link>
+              <span className="inline-flex items-center gap-x-1.5">
+                <Link
+                  href="/terms"
+                  className="hover:text-stone-900 hover:underline dark:hover:text-stone-100"
+                >
+                  terms
+                </Link>
+                <span aria-hidden="true">·</span>
+                <Link
+                  href="/privacy"
+                  className="hover:text-stone-900 hover:underline dark:hover:text-stone-100"
+                >
+                  privacy
+                </Link>
+              </span>
             </div>
           </footer>
           {/* Breathing room so the fixed bottom bar never covers the footer. */}

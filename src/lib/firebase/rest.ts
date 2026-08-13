@@ -54,6 +54,15 @@ function decodeDoc(doc: FirestoreDoc): Record<string, unknown> {
   return decodeFields(doc.fields ?? {});
 }
 
+/**
+ * Decodes a raw Firestore REST document fetched elsewhere (e.g. with a
+ * user's own ID token, which this module's unauthenticated helpers can't
+ * do). Same typed-value decoding as the internal helpers.
+ */
+export function decodeRestDocument(doc: { fields?: Record<string, unknown> }): Record<string, unknown> {
+  return decodeFields((doc.fields ?? {}) as Record<string, FirestoreValue>);
+}
+
 /** Reads a whole collection (follows pagination). Throws on HTTP errors. */
 export async function fetchRestCollection(path: string): Promise<Record<string, unknown>[]> {
   const docs: Record<string, unknown>[] = [];

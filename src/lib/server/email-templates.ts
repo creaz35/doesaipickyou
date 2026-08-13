@@ -83,6 +83,65 @@ export function emailLayout({ preheader, content }: { preheader: string; content
 
 // --- Concrete emails ------------------------------------------------------
 
+export interface SubmissionNotificationInput {
+  name: string;
+  toolId: string;
+  url: string;
+  price: string;
+  aliases: string[];
+  categories: string[];
+  submitterEmail: string | null;
+}
+
+/** To the site owner when a founder submits a tool on /submission. */
+export function submissionNotificationEmail(input: SubmissionNotificationInput): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const name = esc(input.name);
+
+  const content = [
+    `<h1 style="margin:0 0 6px 0;font-size:22px;color:${INK};">New tool submission 📥</h1>`,
+    `<p style="margin:0 0 20px 0;font-size:13px;color:${STONE};">Pending your review on /admin</p>`,
+    paragraph(`<strong>${name}</strong> wants on the leaderboards.`),
+    kvTable([
+      ["Tool", name],
+      ["Id", esc(input.toolId)],
+      ["URL", esc(input.url)],
+      ["Price", esc(input.price)],
+      ["Categories", esc(input.categories.join(", ") || "none")],
+      ["Aliases", esc(input.aliases.join(", "))],
+      ["Submitted by", esc(input.submitterEmail ?? "unknown")],
+    ]),
+    button("Review in admin", `${SITE}/admin`),
+    `<p style="margin:0;font-size:12px;color:${STONE};">Approve to add it to the catalog claimed by the submitter, then run its category to rank it.</p>`,
+  ].join("\n");
+
+  const text = [
+    "New tool submission 📥",
+    "",
+    `Tool:       ${input.name}`,
+    `Id:         ${input.toolId}`,
+    `URL:        ${input.url}`,
+    `Price:      ${input.price}`,
+    `Categories: ${input.categories.join(", ") || "none"}`,
+    `Aliases:    ${input.aliases.join(", ")}`,
+    `By:         ${input.submitterEmail ?? "unknown"}`,
+    "",
+    `Review: ${SITE}/admin`,
+  ].join("\n");
+
+  return {
+    subject: `📥 New tool submission: ${input.name}`,
+    html: emailLayout({
+      preheader: `${input.name} wants on the leaderboards. Pending review.`,
+      content,
+    }),
+    text,
+  };
+}
+
 export interface SponsorReceiptInput {
   productName: string;
   tagline: string;

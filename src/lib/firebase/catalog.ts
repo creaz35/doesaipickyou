@@ -15,6 +15,33 @@ import type { AliasDef, ProductScore } from "@/lib/types";
 export const CATEGORIES_COLLECTION = "categories";
 export const TOOLS_COLLECTION = "tools";
 
+/**
+ * Top-level route names a tool id must never use: the tool's page lives
+ * at /{id}, and a static route always wins that conflict, so a tool named
+ * "stats" would exist but its page would never render.
+ */
+export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
+  "admin",
+  "api",
+  "apple-icon",
+  "categories",
+  "category",
+  "icon.svg",
+  "img",
+  "methodology",
+  "models",
+  "opengraph-image",
+  "privacy",
+  "robots.txt",
+  "signin",
+  "sitemap.xml",
+  "sponsor",
+  "stats",
+  "submission",
+  "terms",
+  "twitter-image",
+]);
+
 export interface CategoryDoc {
   slug: string;
   emoji: string;
@@ -59,6 +86,11 @@ export interface ToolDoc {
   /** Latest live results per category slug, written by the snapshot runner. */
   scores?: Record<string, ToolCategoryScore>;
   lastRunAt?: unknown;
+  /**
+   * The user who claimed this tool (set when an admin approves their
+   * submission). Groundwork for maker features on claimed tools.
+   */
+  ownerUid?: string | null;
 }
 
 function normalizeAliases(aliases: AliasDef[]): StoredAlias[] {
@@ -111,18 +143,22 @@ export async function seedCatalogFromStatic(
 ): Promise<{ categories: number; tools: number }> {
   const { categories, tools } = buildCatalogFromStatic();
 
+  // merge: true, or every sync would wipe runner-written scores and
+  // ownership claims off the docs it touches.
   const batch = writeBatch(db);
   for (const category of categories) {
-    batch.set(doc(db, CATEGORIES_COLLECTION, category.slug), {
-      ...category,
-      updatedAt: serverTimestamp(),
-    });
+    batch.set(
+      doc(db, CATEGORIES_COLLECTION, category.slug),
+      { ...category, updatedAt: serverTimestamp() },
+      { merge: true },
+    );
   }
   for (const tool of tools) {
-    batch.set(doc(db, TOOLS_COLLECTION, tool.id), {
-      ...tool,
-      updatedAt: serverTimestamp(),
-    });
+    batch.set(
+      doc(db, TOOLS_COLLECTION, tool.id),
+      { ...tool, updatedAt: serverTimestamp() },
+      { merge: true },
+    );
   }
   await batch.commit();
 
