@@ -15,19 +15,24 @@ import { countryName, flagEmoji, getGeoHint, pathLabel } from "@/lib/presence-ge
 const HEARTBEAT_MS = 45_000;
 const REFRESH_MS = 30_000;
 
+// localStorage, not sessionStorage: one id per browser, so ten open tabs
+// heartbeat as one visitor instead of ten
+let memoryId: string | undefined;
 function presenceId(): string {
   try {
-    let id = sessionStorage.getItem("daipy-presence-id");
+    let id = localStorage.getItem("daipy-presence-id");
     if (!id) {
       id =
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      sessionStorage.setItem("daipy-presence-id", id);
+      localStorage.setItem("daipy-presence-id", id);
     }
     return id;
   } catch {
-    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    // Storage blocked (private mode): keep one stable id per tab at least
+    if (!memoryId) memoryId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return memoryId;
   }
 }
 

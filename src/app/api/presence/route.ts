@@ -57,6 +57,16 @@ export async function POST(request: Request) {
   if (id.length < 8 || id.length > 64) {
     return NextResponse.json({ error: "Bad id." }, { status: 400 });
   }
+
+  // Rendering crawlers execute JS and would fire the beacon; drop them the
+  // same way analytics tools do, or bots show up as "visitors"
+  const ua = (request.headers.get("user-agent") ?? "").toLowerCase();
+  if (
+    !ua ||
+    /bot|crawl|spider|slurp|headless|lighthouse|pingdom|uptime|monitor|preview|scrape|fetch|curl|python|node-fetch|axios/.test(ua)
+  ) {
+    return NextResponse.json({ ok: true });
+  }
   if (store.size >= MAX_ENTRIES && !store.has(id)) {
     return NextResponse.json({ ok: true });
   }
@@ -69,8 +79,11 @@ export async function POST(request: Request) {
   const city = String(body.city ?? "")
     .replace(/[^\p{L}\p{N} .'-]/gu, "")
     .slice(0, 40);
+  // Internal paths only: "//host" would be a protocol-relative external URL
   const path =
-    typeof body.path === "string" && body.path.startsWith("/") ? body.path.slice(0, 80) : "/";
+    typeof body.path === "string" && body.path.startsWith("/") && !body.path.startsWith("//")
+      ? body.path.slice(0, 80)
+      : "/";
 
   store.set(id, { country, city, path, lastSeen: now });
   return NextResponse.json({ ok: true });
